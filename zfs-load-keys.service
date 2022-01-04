@@ -1,0 +1,19 @@
+[Unit]
+Description=Load ZFS encryption keys
+DefaultDependencies=no
+After=network-online.target
+Wants=network-online.target
+After=zfs-import.target
+Wants=zfs-import.target
+Before=zfs-volume-wait.service
+Before=lxc.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/root/vault.env
+ExecStart=/usr/local/sbin/zfs_load_keys.sh
+ExecStartPost=-/sbin/zfs mount -a
+
+[Install]
+WantedBy=multi-user.target
