@@ -24,7 +24,7 @@ This guide aims to provide the basic steps needed to configure a Linux system to
 
 This guide does **not** cover the following:
 
- - General Linux setup. It is assumed you have access to two servers (physical or virtual) running Debian (or a derivative distro like Ubuntu) - one that will be running OpenZFS, and one for Hashicorp Vault. The guide will refer to them as "alice" and "bob", respectively.
+ - General Linux setup. It is assumed you have access to two servers (physical or virtual) running Debian (or a derivative distro like Ubuntu) - one that will be running OpenZFS, and one for Hashicorp Vault. The guide will refer to them as "fileserver" and "keyserver", respectively.
  - Proper setup and tuning of ZFS. This is highly dependent on hardware as well as workloads, and therefore out of the scope of this guide.
  - Likewise, proper hardening of Hashicorp Vault.
  - Encryption of the root filesystem.
@@ -35,7 +35,7 @@ This guide is provided in good faith and for informational purposes only. No cla
 
 ## Setting up ZFS
 
-The following steps should be done on the server "alice".
+The following steps should be done on the fileserver.
 
 ### Install OpenZFS
 
@@ -102,7 +102,7 @@ $ sudo zfs mount -l tank/data
 
 ## Setting up Vault
 
-The following steps should be done on the server "bob".
+The following steps should be done on the keyserver.
 
 ### Prerequisites
 
@@ -174,10 +174,10 @@ Vault supports a number of back-ends for storing secrets, but for the purposes o
 $ vault secrets enable -version=2 -path=secret kv
 ```
 
-The K/V store supports nested keys with arbitrary values. The script in this repo that retrieves the keys, assumes the path will consist of "zfs", then the server's hostname, and finally the full path of the dataset. To store the encryption passphrase for the dataset "tank/data" on the server "alice", execute the following command:
+The K/V store supports nested keys with arbitrary values. The script in this repo that retrieves the keys, assumes the path will consist of "zfs", then the server's hostname, and finally the full path of the dataset. To store the encryption passphrase for the dataset "tank/data" on the server "fileserver", execute the following command:
 
 ```shell
-$ vault kv put secret/zfs/alice/tank/data key=ZFS_PASSPHRASE
+$ vault kv put secret/zfs/fileserver/tank/data key=ZFS_PASSPHRASE
 ```
 
 This scheme allows a single vault to store the keys for multiple datasets on multiple servers, as well as other secrets.
@@ -185,7 +185,7 @@ This scheme allows a single vault to store the keys for multiple datasets on mul
 To retrieve the passphrase, enter the following command:
 
 ```shell
-$ vault kv get secret/zfs/alice/tank/data
+$ vault kv get secret/zfs/fileserver/tank/data
 ```
 
 See the [documentation for the `vault kv` command](https://www.vaultproject.io/docs/commands/kv) for a full list of possible operations.
@@ -195,7 +195,7 @@ See the [documentation for the `vault kv` command](https://www.vaultproject.io/d
 It would obviously be a bad idea to have client devices authenticating with the root token. Limited, read-only access needs to be set up. In Vault, this is achieved with [policies](https://www.vaultproject.io/docs/concepts/policies). Copy the policy.hcl file included in the repo to your server, change the path as needed, and import the policy with the following command:
 
 ```shell
-$ vault policy write alice /path/to/policy.hcl
+$ vault policy write fileserver /path/to/policy.hcl
 ```
 
 For authentication, the [AppRole method](https://www.vaultproject.io/docs/auth/approle) works well for automated workflows. It needs to be enabled with the following command:
@@ -207,19 +207,19 @@ $ vault auth enable approle
 Then a new role can be created and associated with the imported policy with:
 
 ```shell
-$ vault write auth/approle/role/alice token_policies="alice" token_ttl=0s token_max_ttl=0s
+$ vault write auth/approle/role/fileserver token_policies="fileserver" token_ttl=0s token_max_ttl=0s
 ```
 
 Use the following commands to retrieve the RoleID and SecretID of the new role:
 
 ```shell
-$ vault read auth/approle/role/alice/role-id
-$ vault write -force auth/approle/role/alice/secret-id
+$ vault read auth/approle/role/fileserver/role-id
+$ vault write -force auth/approle/role/fileserver/secret-id
 ```
 
 ## Load ZFS encryption keys from Vault
 
-Back to the server "alice".
+Back to the fileserver.
 
 ### Prerequisites
 
