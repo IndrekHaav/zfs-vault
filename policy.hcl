@@ -1,3 +1,3 @@
-path "secret/data/zfs/alice/*" {
+path "secret/data/zfs/fileserver/*" {
     capabilities = ["read"]
 }
