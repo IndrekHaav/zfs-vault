@@ -1,4 +1,4 @@
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/IndrekHaav/zfs-vault/link-check?label=link-check)](https://github.com/IndrekHaav/zfs-vault/actions/workflows/link-check.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/IndrekHaav/zfs-vault/link-check.yml?branch=main&label=link-check)](https://github.com/IndrekHaav/zfs-vault/actions/workflows/link-check.yml)
 
 # Loading ZFS encryption keys on boot from Hashicorp Vault
 
